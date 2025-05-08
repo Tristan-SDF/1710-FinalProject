@@ -21,6 +21,9 @@ sig Party {
     members : set Voter,
     candidates : set Candidate
 }
+sig Canidates {
+    canidates : set Canidate
+}
 
 // Election systems and voting
 
@@ -46,10 +49,11 @@ pred ElectionsInit {
         v.thirdChoice != v.firstChoice
         v.thirdChoice != v.secondChoice
     }
+    all c1,c2,c3 : Canidate | c1, c2, c3, in Canidates.canidates
     //Can't vote more than once
 
     //Electoral votes depends on voters 
-    all c: County
+    // all c: County
 }
 
 -- count votes (connect voters' votes to candidate votes)
@@ -80,23 +84,48 @@ fun countyWinnter[county: County]: lone Candidate {
 
 // Predicates for different election systems
 
-pred simpleMajority {
-    some w: Winner {
-        some c2, c3: Candidate {
-            #{firstChoiceVotes[w.candidate]} > #{firstChoiceVotes[c2]}
-            #{firstChoiceVotes[w.candidate]} > #{firstChoiceVotes[c3]}
-        }
+// pred simpleMajority {
+//     some w: Winner {
+//         some c2, c3: Candidate {
+//             #{firstChoiceVotes[w.candidate]} > #{firstChoiceVotes[c2]}
+//             #{firstChoiceVotes[w.candidate]} > #{firstChoiceVotes[c3]}
+//         }
+//     }
+// }
+
+//     some w: Winner {
+//  {
+
+//     some w: Winner {
+// }
+
+pred rankedChoiceRound1 {
+    //If a canidate has more than 50% of the first choice votes they win outright
+    some c1, c2, c3: Canidates.canidates {
+        //c1,2,3 > 50%
+        #{firstChoiceVotes[c1.candidate]} > (#{firstChoiceVotes[c2.candidate]} + #{firstChoiceVotes[c3.candidate]}) implies c1 wins 
+        #{firstChoiceVotes[c2.candidate]} > (#{firstChoiceVotes[c1.candidate]} + #{firstChoiceVotes[c3.candidate]}) implies c2 wins 
+        #{firstChoiceVotes[c3.candidate]} > (#{firstChoiceVotes[c1.candidate]} + #{firstChoiceVotes[c2.candidate]}) implies c3 wins 
+
+
     }
 }
 
-    some w: Winner {
- {
+pred rankedChoiceRound2 {
+    //If a canidate has more than 50% of the first choice votes they win outright
+    some c1, c2: Canidate {
+        //c1,2,3 > 50%
+        #{firstChoiceVotes[c1.candidate]} > (#{firstChoiceVotes[c2.candidate]} + #{firstChoiceVotes[c3.candidate]}) implies c1 wins 
+        #{firstChoiceVotes[c2.candidate]} > (#{firstChoiceVotes[c1.candidate]} + #{firstChoiceVotes[c3.candidate]}) implies c2 wins 
+        #{firstChoiceVotes[c3.candidate]} > (#{firstChoiceVotes[c1.candidate]} + #{firstChoiceVotes[c2.candidate]}) implies c3 wins 
 
-    some w: Winner {
+
+    }
 }
 
-pred rankedChoice {
-    
+pred rankedChoiceTraces {
+    rankedChoiceRound1 
+
 }
 
 // electoral college - ricardo
@@ -105,7 +134,7 @@ pred electoralCollegeSystem{
 }
 
 run {
-    simpleMajority
-    electoralCollege
-    rankedChoice
+    // simpleMajority
+    // electoralCollege
+    rankedChoiceTraces
 } for exactly 3 Candidate, 5 County

@@ -3,8 +3,8 @@
 // Base sigs
 
 sig Voter {
-    partyChoice: one Party,
-    firstChoice : one Candidate
+    partyChoice: lone Party,
+    firstChoice : lone Candidate
 }
 
 sig Candidate {
@@ -44,7 +44,7 @@ pred simpleMajority {
 }
 
 pred wellformed {
-    all v: Voter | some v.firstChoice
+    all v: Voter | some v.firstChoice => v.firstChoice in v.partyChoice.candidates
 }
 
 
