@@ -1,0 +1,406 @@
+// Electoral College Visualization Script - No Text Boxes
+const stage = new Stage();
+
+// Get data from the instance
+const voterAtoms = instance.signature('Voter').atoms();
+const countyAtoms = instance.signature('County').atoms();
+const candidateAtoms = instance.signature('Candidate').atoms();
+const partyAtoms = instance.signature('Party').atoms();
+
+// Get relations
+const countyField = instance.field('county');
+const firstChoiceField = instance.field('firstChoice');
+const electoralVotesField = instance.field('electoralVotes');
+const pField = instance.field('p');
+
+// Set up vibrant, distinct colors for candidates
+const candidateColors = {};
+const distinctColors = ['#E63946', '#1D3557', '#4361EE', '#FF9F1C', '#2A9D8F'];
+candidateAtoms.forEach((candidate, index) => {
+    candidateColors[candidate.id()] = distinctColors[index % distinctColors.length];
+});
+
+// --------- TITLE SECTION ---------
+// Main title without enclosing box
+stage.add(new TextBox({
+    text: "2024 ELECTORAL COLLEGE SIMULATION",
+    coords: {x: 400, y: 30},
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#000000'
+}));
+
+// --------- ELECTORAL MAP SECTION ---------
+// Section title without enclosing box
+stage.add(new TextBox({
+    text: "ELECTORAL MAP",
+    coords: {x: 200, y: 90},
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#000000'
+}));
+
+// Calculate layout for counties
+const mapStart = {x: 100, y: 140};
+const mapWidth = 600;
+const countyMargin = 20;
+const countySize = Math.min(150, 600 / countyAtoms.length - countyMargin);
+const countiesPerRow = Math.floor(mapWidth / (countySize + countyMargin));
+
+// Helper functions
+function countVotes(candidate, county) {
+    let count = 0;
+    for (let i = 0; i < voterAtoms.length; i++) {
+        try {
+            const voter = voterAtoms[i];
+            const voterCounty = voter.join(countyField).atoms()[0];
+            const voterChoice = voter.join(firstChoiceField).atoms()[0];
+            if (voterCounty && voterChoice && 
+                voterCounty.id() === county.id() && 
+                voterChoice.id() === candidate.id()) {
+                count++;
+            }
+        } catch (e) {}
+    }
+    return count;
+}
+
+function getCountyWinner(county) {
+    let maxVotes = -1;
+    let winner = null;
+    
+    for (let i = 0; i < candidateAtoms.length; i++) {
+        try {
+            const candidate = candidateAtoms[i];
+            const votes = countVotes(candidate, county);
+            if (votes > maxVotes) {
+                maxVotes = votes;
+                winner = candidate;
+            }
+        } catch (e) {}
+    }
+    
+    return winner;
+}
+
+function getElectoralVotes(county) {
+    try {
+        const votesStr = county.join(electoralVotesField).toString();
+        return parseInt(votesStr) || 1;
+    } catch (e) {
+        return 1;
+    }
+}
+
+function getTotalElectoralVotes(candidate) {
+    let total = 0;
+    for (let i = 0; i < countyAtoms.length; i++) {
+        try {
+            const county = countyAtoms[i];
+            const winner = getCountyWinner(county);
+            if (winner && winner.id() === candidate.id()) {
+                total += getElectoralVotes(county);
+            }
+        } catch (e) {}
+    }
+    return total;
+}
+
+function getPopularVotes(candidate) {
+    let count = 0;
+    for (let i = 0; i < voterAtoms.length; i++) {
+        try {
+            const voter = voterAtoms[i];
+            const voterChoice = voter.join(firstChoiceField).atoms()[0];
+            if (voterChoice && voterChoice.id() === candidate.id()) {
+                count++;
+            }
+        } catch (e) {}
+    }
+    return count;
+}
+
+function getTotalPopularVotes() {
+    let total = 0;
+    for (let i = 0; i < candidateAtoms.length; i++) {
+        try {
+            const candidate = candidateAtoms[i];
+            total += getPopularVotes(candidate);
+        } catch (e) {}
+    }
+    return total || 1; // Avoid division by zero
+}
+
+function getElectoralWinner() {
+    let maxVotes = -1;
+    let winner = null;
+    
+    for (let i = 0; i < candidateAtoms.length; i++) {
+        try {
+            const candidate = candidateAtoms[i];
+            const votes = getTotalElectoralVotes(candidate);
+            if (votes > maxVotes) {
+                maxVotes = votes;
+                winner = candidate;
+            }
+        } catch (e) {}
+    }
+    
+    return winner || candidateAtoms[0];
+}
+
+function getPopularVoteWinner() {
+    let maxVotes = -1;
+    let winner = null;
+    
+    for (let i = 0; i < candidateAtoms.length; i++) {
+        try {
+            const candidate = candidateAtoms[i];
+            const votes = getPopularVotes(candidate);
+            if (votes > maxVotes) {
+                maxVotes = votes;
+                winner = candidate;
+            }
+        } catch (e) {}
+    }
+    
+    return winner || candidateAtoms[0];
+}
+
+// Draw counties - keep the counties as rectangles
+let maxY = 0;
+for (let index = 0; index < countyAtoms.length; index++) {
+    try {
+        const county = countyAtoms[index];
+        const row = Math.floor(index / countiesPerRow);
+        const col = index % countiesPerRow;
+        const x = mapStart.x + col * (countySize + countyMargin);
+        const y = mapStart.y + row * (countySize + countyMargin);
+        maxY = Math.max(maxY, y + countySize + 10);
+        
+        const countyWinner = getCountyWinner(county);
+        const color = countyWinner ? candidateColors[countyWinner.id()] : '#cccccc';
+        const electoralVotes = getElectoralVotes(county);
+        
+        // County background with border
+        stage.add(new Rectangle({
+            coords: {x, y},
+            width: countySize,
+            height: countySize,
+            color: color,
+            opacity: 0.85,
+            borderColor: '#000000',
+            borderWidth: 2
+        }));
+        
+        // County ID (directly on the rectangle without a background box)
+        stage.add(new TextBox({
+            text: county.id(),
+            coords: {x: x + countySize/2, y: y + 20},
+            fontSize: 14,
+            fontWeight: 'bold',
+            color: '#FFFFFF'
+        }));
+        
+        // Electoral vote count (directly on the rectangle without a background box)
+        stage.add(new TextBox({
+            text: electoralVotes + " EV",
+            coords: {x: x + countySize/2, y: y + countySize - 20},
+            fontSize: 18,
+            fontWeight: 'bold',
+            color: '#FFFFFF'
+        }));
+        
+        // Vote counts for each candidate (directly on the rectangle without background boxes)
+        let voteY = y + 45;
+        for (let j = 0; j < candidateAtoms.length; j++) {
+            try {
+                const candidate = candidateAtoms[j];
+                const voteCount = countVotes(candidate, county);
+                if (voteCount > 0) {
+                    stage.add(new TextBox({
+                        text: candidate.id() + ": " + voteCount,
+                        coords: {x: x + countySize/2, y: voteY},
+                        fontSize: 12,
+                        color: '#FFFFFF'
+                    }));
+                    voteY += 18;
+                }
+            } catch (e) {}
+        }
+    } catch (e) {}
+}
+
+// --------- RESULTS SECTION ---------
+const resultsStart = {x: 400, y: maxY + 40};
+
+// Results title without enclosing box
+stage.add(new TextBox({
+    text: "ELECTION RESULTS",
+    coords: {x: resultsStart.x, y: resultsStart.y},
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#000000'
+}));
+
+// Table headers without enclosing boxes
+const headerY = resultsStart.y + 40;
+stage.add(new TextBox({
+    text: "CANDIDATE",
+    coords: {x: resultsStart.x - 180, y: headerY},
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#000000'
+}));
+
+stage.add(new TextBox({
+    text: "ELECTORAL VOTES",
+    coords: {x: resultsStart.x, y: headerY},
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#000000'
+}));
+
+stage.add(new TextBox({
+    text: "POPULAR VOTES",
+    coords: {x: resultsStart.x + 180, y: headerY},
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#000000'
+}));
+
+// Calculate total electoral votes and popular votes
+let totalElectoralVotes = 0;
+const totalPopularVotes = getTotalPopularVotes();
+
+for (let i = 0; i < candidateAtoms.length; i++) {
+    try {
+        totalElectoralVotes += getTotalElectoralVotes(candidateAtoms[i]);
+    } catch (e) {}
+}
+totalElectoralVotes = totalElectoralVotes || 1; // Avoid division by zero
+
+// Draw candidate results without enclosing boxes
+for (let i = 0; i < candidateAtoms.length; i++) {
+    try {
+        const candidate = candidateAtoms[i];
+        const y = headerY + 30 + i * 30;
+        
+        // Candidate color indicator
+        stage.add(new Circle({
+            center: {x: resultsStart.x - 210, y: y},
+            radius: 8,
+            color: candidateColors[candidate.id()]
+        }));
+        
+        // Candidate name
+        stage.add(new TextBox({
+            text: candidate.id(),
+            coords: {x: resultsStart.x - 180, y: y},
+            fontSize: 14,
+            color: '#000000'
+        }));
+        
+        // Electoral votes
+        const electoralVotes = getTotalElectoralVotes(candidate);
+        const electoralPct = Math.round((electoralVotes / totalElectoralVotes) * 100);
+        
+        stage.add(new TextBox({
+            text: electoralVotes + " (" + electoralPct + "%)",
+            coords: {x: resultsStart.x, y: y},
+            fontSize: 14,
+            color: '#000000'
+        }));
+        
+        // Electoral votes bar
+        if (electoralVotes > 0) {
+            stage.add(new Rectangle({
+                coords: {x: resultsStart.x + 70, y: y - 10},
+                width: Math.max(5, electoralPct),
+                height: 20,
+                color: candidateColors[candidate.id()],
+                opacity: 0.7
+            }));
+        }
+        
+        // Popular votes
+        const popularVotes = getPopularVotes(candidate);
+        const popularPct = Math.round((popularVotes / totalPopularVotes) * 100);
+        
+        stage.add(new TextBox({
+            text: popularVotes + " (" + popularPct + "%)",
+            coords: {x: resultsStart.x + 180, y: y},
+            fontSize: 14,
+            color: '#000000'
+        }));
+        
+        // Popular votes bar
+        if (popularVotes > 0) {
+            stage.add(new Rectangle({
+                coords: {x: resultsStart.x + 250, y: y - 10},
+                width: Math.max(5, popularPct),
+                height: 20,
+                color: candidateColors[candidate.id()],
+                opacity: 0.7
+            }));
+        }
+    } catch (e) {}
+}
+
+// --------- WINNERS SECTION ---------
+const winnersY = headerY + 40 + candidateAtoms.length * 30;
+
+// Get the winners
+const electoralWinner = getElectoralWinner();
+const popularWinner = getPopularVoteWinner();
+
+// Draw winner information without enclosing boxes
+if (electoralWinner && popularWinner) {
+    // Electoral College Winner
+    stage.add(new TextBox({
+        text: "ELECTORAL COLLEGE WINNER:",
+        coords: {x: resultsStart.x - 125, y: winnersY + 15},
+        fontSize: 14,
+        fontWeight: 'bold',
+        color: '#000000'
+    }));
+    
+    stage.add(new TextBox({
+        text: electoralWinner.id(),
+        coords: {x: resultsStart.x - 125, y: winnersY + 40},
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: candidateColors[electoralWinner.id()]
+    }));
+    
+    // Popular Vote Winner
+    stage.add(new TextBox({
+        text: "POPULAR VOTE WINNER:",
+        coords: {x: resultsStart.x + 125, y: winnersY + 15},
+        fontSize: 14,
+        fontWeight: 'bold',
+        color: '#000000'
+    }));
+    
+    stage.add(new TextBox({
+        text: popularWinner.id(),
+        coords: {x: resultsStart.x + 125, y: winnersY + 40},
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: candidateColors[popularWinner.id()]
+    }));
+    
+    // Highlight mismatch between electoral and popular vote winners, if any
+    if (electoralWinner.id() !== popularWinner.id()) {
+        stage.add(new TextBox({
+            text: "ELECTORAL COLLEGE VS. POPULAR VOTE MISMATCH!",
+            coords: {x: resultsStart.x, y: winnersY + 100},
+            fontSize: 16,
+            fontWeight: 'bold',
+            color: '#dc3545'
+        }));
+    }
+}
+
+// Render the final visualization
+stage.render(svg, document);
