@@ -5,7 +5,7 @@ sig Voter {
   county : one County,
   party: one Party,
   firstChoice : one Candidate,
-  secondChoice : lone Candidate, // not used but may implement ranked voting 
+  secondChoice : lone Candidate,
   thirdChoice : lone Candidate
 }
 
@@ -149,5 +149,7 @@ pred oneWinnerPerCounty {
 // Check that there's always exactly one winner per county
 check {oneWinnerPerCounty} for 4 Candidate, 20 Voter, 8 County, 2 Party, 5 Int
 
-// Find an instance where the popular vote winner loses the electoral college
+
+// Finds instances where the popular vote winner loses the electoral college
+// This demonstrates a key criticism of the electoral college system
 run popularVoteWinnerLoses for 4 Candidate, 20 Voter, 8 County, 2 Party, 5 Int
