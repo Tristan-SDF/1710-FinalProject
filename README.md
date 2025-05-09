@@ -1,6 +1,22 @@
 # 1710-FinalProject
 
-# Ranked Choice Overview
+# Project Overview
+
+In this project we compared 3 common voting systems with Forge modeling. Each system model is outlined below. Run the models and accompanying visualizations, changing the number of voters and their party preferences, to observe how different voting systems can influence the outcome of an election! 
+
+## Simple Majority
+
+In the simple majority system model, voters are represented by the Voter sig, each with a party affiliation and a single first-choice candidate. Candidates are defined by the Candidate sig and are affiliated with a Party. Parties group voters and candidates together for consistency and party alignment. The election system is represented by an abstract ElectionSystem, with SimpleMajority extending it, and a Winner sig identifies the candidate who wins under this system.
+
+The function firstChoiceVotes counts how many voters selected a candidate as their first choice. The simpleMajority predicate enforces that a winner must have more first-choice votes than any other candidate. The wellformed predicate ensures that voters’ choices are valid—specifically, that a voter’s selected candidate must belong to their affiliated party.
+
+We chose a simple approach to voting to avoid the complexity of preference rankings or runoff logic. To maintain a manageable model size, we limited the scope to a couple candidates, voters, and parties. This kept the logic understandable and reduced the computational load in Forge. We also modeled voters with strict party loyalty to simplify voter-candidate relationships, although this does not fully reflect real-world electoral behavior.
+
+This model assumes that voters always vote within their own party and that there is no ambiguity in vote counts (i.e., no ties are considered, the election is run again or else voter count is forced to be odd). It also simplifies real-world elections by using small, fixed numbers of voters and candidates, which may lead to a higher frequency of unrealistic or evenly split outcomes.
+
+The simple majority system is straightforward but vulnerable to vote splitting, especially in elections with more than two candidates. Our model demonstrates how a candidate can win without an absolute majority, which may lead to questions about fairness and representation. Plurality voting comes with its downsides, but can still be an effective way to decide an election outcome. 
+
+## Ranked Choice Overview
 
 For this election method we implemented ranked choice. For ranked choice voters are given a first choice, second choice, and third choice to vote for their candidate. The candidate with the majority of the votes wins outright. If this doesn't happen, the candidate with the fewest first choice votes is eliminated, and the voters who had them as their first choice have their second choice vote added to the recount. This cycle repeats until a majority is found.
 
@@ -8,7 +24,7 @@ When making this representation we had to make some tradeoffs, which limited the
 
 When first starting ranked choice, I attempted to add traces. I found this to be unrealistic as the computation between rounds made modeling the problem significantly more complex. For this reason, the model is computed in one step through assigning a winner after evaluating the choices the voters made. When viewing an instance of our model each voter has a first choice, second choice, and third choice. The ranked choice voting system is calculated from these choices, resulting in a winner through the rules of ranked choice.
 
-# Electoral College
+## Electoral College
 
 Model Structure
 Core Components
@@ -48,6 +64,6 @@ Popular Vote vs. Electoral College: Our model successfully demonstrates scenario
 County Significance: Counties with high electoral vote counts have disproportionate influence on the final outcome, demonstrating how campaigns strategically focus on "swing states" with high electoral value.
 
 
-# Collaborators 
+## Collaborators 
 
 Ricardo, Sydney, and Tristan. 
