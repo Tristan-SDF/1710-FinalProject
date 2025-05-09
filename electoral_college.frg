@@ -58,14 +58,10 @@ fun votesForCandidateInCounty[cand: Candidate, targetCounty: County]: Int {
 // No other candidate got more votes than them in this county
 // At least one other candidate got fewer votes than them
 pred isCountyWinner[c: Candidate, county: County] {
-  // Get votes for candidate c in this county
   let votes = votesForCandidateInCounty[c, county] | {
-    // Either c has more votes than any other candidate
     all other: Candidate | other != c implies 
       votesForCandidateInCounty[other, county] <= votes
     
-    // Make sure at least one other candidate has strictly fewer votes
-    // (This ensures c has the most votes)
     some other: Candidate | other != c and 
       votesForCandidateInCounty[other, county] < votes
   }
@@ -74,9 +70,17 @@ pred isCountyWinner[c: Candidate, county: County] {
 // Get the unique winner for each county
 // adds up electoral votes for a candidate following the "winner-take-all" rule
 fun countyWinner[county: County]: one Candidate {
+  // Case 1: There's a clear winner
   {c: Candidate | isCountyWinner[c, county]}
+  // Case 2: Tie - use lowest ID as tiebreaker
+  + {c: Candidate | 
+      // Check if it's a tie (all candidates have same votes)
+      (all c1, c2: Candidate | 
+        votesForCandidateInCounty[c1, county] = votesForCandidateInCounty[c2, county])
+      // Return lowest ID candidate as tiebreaker
+      and (all other: Candidate | other != c implies c < other)
+    }
 }
-
 // Calculate electoral votes for a candidate (winner-take-all system)
 fun electoralVotesForCandidate[c: Candidate]: Int {
   sum county: County | (countyWinner[county] = c => county.electoralVotes else 0)
