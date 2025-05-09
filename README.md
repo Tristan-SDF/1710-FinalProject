@@ -46,3 +46,8 @@ Key Findings
 
 Popular Vote vs. Electoral College: Our model successfully demonstrates scenarios where the popular vote winner loses the electoral college. This confirms one of the most criticized aspects of the Electoral College system.
 County Significance: Counties with high electoral vote counts have disproportionate influence on the final outcome, demonstrating how campaigns strategically focus on "swing states" with high electoral value.
+
+
+# Collaborators 
+
+Ricardo, Sydney, and Tristan. 
