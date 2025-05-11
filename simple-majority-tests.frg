@@ -226,3 +226,5 @@ test suite for simpleMajority {
         `W.system = `SimpleMajority
     }
 }
+
+// assert simpleMajority is sufficient for wellformed for 1 Winner // failing test
